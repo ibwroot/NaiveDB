@@ -1,0 +1,10 @@
+package raft_demo;
+
+enum StatusCode {
+    kOK = 0;
+    kNotOK = 1;
+    kKeyNotFound = 2;
+    kVersionError = 3;
+    kIsFollower = 4;
+    kInShutdownProgress = 5;
+}
