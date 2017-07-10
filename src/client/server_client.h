@@ -16,7 +16,7 @@ class RpcClient;
 class ServerService_Stub;
 class ServerClient {
 public:
-    ServerClient(RpcClient* rpc_client, const std::string& servernodes)
+    ServerClient(RpcClient* rpc_client, const std::string &servernodes)
     : rpc_client_(rpc_client), leader_id_(0) {
         SplitString(servernodes, &server_nodes_);
         server_stubs_.resize(server_nodes_.size());        
@@ -31,18 +31,23 @@ public:
                     const Request* request, Response* response,
                     int32_t rpc_timeout, int retry_times = 1) {
         bool ret = false;
+        int success = 0;
         for (uint32_t i = 0; i < server_stubs_.size(); ++i) {
             printf("-->%s i:%d \n", __func__, i);
-            int server_id = leader_id_;
+            int server_id = i;
             ret = rpc_client_->SendRequest(server_stubs_[server_id], func, request, response,
                                             rpc_timeout, retry_times);
             if (ret && response->status() != kIsFollower) {
-                return true;
+                ++success;
             }
             //MutexLock lock(&mu_);
-            if (server_id == leader_id_) {
-                leader_id_ = (leader_id_ + 1) % server_stubs_.size();
-            } 
+            //if (server_id == leader_id_) {
+            //    leader_id_ = (leader_id_ + 1) % server_stubs_.size();
+            //} 
+        }
+        if (success == server_stubs_.size()) {
+            printf("###send request success!\n");
+            return true;
         }
         return ret;
     }
@@ -64,7 +69,7 @@ private:
             }
         }
         stringv->push_back(source.substr(last + 1));
-}
+    }
 
 };
 }

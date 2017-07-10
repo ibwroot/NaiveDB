@@ -27,6 +27,10 @@ public:
             const GetRequest* request,
             GetResponse* response,
             ::google::protobuf::Closure* done);
+    void PutBatch(::google::protobuf::RpcController* controller,
+            const PutBatchRequest* request,
+            PutBatchResponse* response,
+            ::google::protobuf::Closure* done);
 private:
 //    Sync* sync_;
     bool is_leader;

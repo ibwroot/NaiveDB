@@ -1,4 +1,5 @@
 SOFA_PBRPC_DIR=./thirdparty
+GFLAG_DIR=./thirdparty
 
 OPT ?= -O2
 
@@ -7,11 +8,11 @@ include depends.mk
 CXX=g++
 INCPATH=-I./src -I$(SOFA_PBRPC_DIR)/include -I$(PROTOBUF_DIR)/include \
 		-I$(SNAPPY_DIR)/include -I$(ZLIB_DIR)/include \
-		-T$(LEVELDB_DIR)/include
-CXXFLAGS += $(OPT) -pipe -W -Wall -fPIC -D_GNU_SOURCE -D__STDC_LIMIT_MACROS $(INCPATH)
+		-T$(LEVELDB_DIR)/include -I$(GFLAG_DIR)/include
+CXXFLAGS += --std=c++11 $(OPT) -pipe -W -Wall -fPIC -D_GNU_SOURCE -D__STDC_LIMIT_MACROS $(INCPATH)
 
 LIBRARY=$(SOFA_PBRPC_DIR)/lib/libsofa-pbrpc.a $(PROTOBUF_DIR)/lib/libprotobuf.a $(SNAPPY_DIR)/lib/libsnappy.a \
-		$(LEVELDB_DIR)/lib/libleveldb.a
+		$(LEVELDB_DIR)/lib/libleveldb.a $(GFLAG_DIR)/lib/libgflags.a
 LDFLAGS += -L$(ZLIB_DIR)/lib -lpthread -lz
 
 UNAME_S := $(shell uname -s)
@@ -38,7 +39,7 @@ CLIENT_TEST_OBJ = $(patsubst %.cc, %.o, $(wildcard src/client_test/*.cc))
 
 PROTO_OPTIONS=--proto_path=./src/proto --proto_path=$(SOFA_PBRPC_DIR)/include --proto_path=$(PROTOBUF_DIR)/include --cpp_out=./src/proto/
 
-BIN=server client client_test
+BIN=server client #client_test
 
 all: check_depends $(BIN)
 
@@ -54,7 +55,7 @@ check_depends:
 	@if [ ! -f "$(SOFA_PBRPC_DIR)/lib/libsofa-pbrpc.a" ]; then echo "ERROR: need sofa-pbrpc lib"; exit 1; fi
  
 clean:
-	@rm -f $(BIN) src/server/*.o src/proto/*.pb.*
+	@rm -f $(BIN) src/server/*.o src/proto/*.pb.* src/client/*.o src/client_test/*.o
 
 rebuild: clean all
 

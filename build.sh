@@ -97,6 +97,27 @@ if [ ! -f "${FLAG_DIR}/sofa-pbrpc" ] \
     touch "${FLAG_DIR}/sofa-pbrpc"
 fi
 
+# cmake for gflags
+if ! which cmake ; then
+    cd CMake-3.2.1
+    ./configure --prefix=${DEPS_PREFIX}
+    make -j4
+    make install
+    cd -
+fi
+
+# gflags
+if [ ! -f "${FLAG_DIR}/gflags_2_1_1" ] \
+    || [ ! -f "${DEPS_PREFIX}/lib/libgflags.a" ] \
+    || [ ! -d "${DEPS_PREFIX}/include/gflags" ]; then
+    cd gflags-2.1.1
+    cmake -DCMAKE_INSTALL_PREFIX=${DEPS_PREFIX} -DGFLAGS_NAMESPACE=google -DCMAKE_CXX_FLAGS=-fPIC
+    make -j4
+    make install
+    cd -
+    touch "${FLAG_DIR}/gflags_2_1_1"
+fi
+
 cd ${WORK_DIR}
 
 ########################################

@@ -1,10 +1,17 @@
 #include <string>
 
 #include <sofa/pbrpc/pbrpc.h>
+#include <gflags/gflags.h>
 
 #include "proto/server_service.pb.h"
 
 #include "client/server_client.h"
+#include "client/client_impl.h"
+#include "client/conshash.h"
+
+DECLARE_string(flagfile);
+DEFINE_string(dd_strategy, "none", "data distribute strategy");
+DEFINE_string(server_nodes, "", "server cluster addresses");
 
 using namespace raft_demo;
 
@@ -22,45 +29,49 @@ void PrintUsage() {
     printf("command:");
     printf("\t  put <key> <value>\n");
     printf("\t\t  get <key>\n");
+    printf("\t\t  putbatch <file path>\n");
 }
 
-int Put(ServerClient* server_client_, int argc, char* argv[]) {
+int Put(conshash* ch, int argc, char* argv[]) {
     if (argc != 2) {
         PrintUsage();
         return -1;
     }
-    PutRequest request;
-    PutResponse response;
-    request.set_key(argv[0]);
-    request.set_value(argv[1]);
-    bool ret = server_client_->SendRequest(&ServerService_Stub::Put, &request, &response, 15, 3);
-    if (!ret) {
-        printf("server_client_->SendRequest Put fail!\n");
+    
+
+    std::string addrs(ch->GetTargetAddrs(argv[0]));
+    client_impl* client_ = new client_impl(addrs);
+    int ret = client_->Put(argv[0], argv[1]);
+    if (ret) {
+        printf("client_->SendRequest Put fail!\n");
         return -1;
     }
     return 0;
 }
 
-int Get(ServerClient* server_client_, int argc, char* argv[]) {
+int Get(conshash* ch, int argc, char* argv[]) {
     if (argc != 1) {
         PrintUsage();
         return -1;
     }
-    GetRequest request;
-    GetResponse response;
-    request.set_key(argv[0]);
-    bool ret = server_client_->SendRequest(&ServerService_Stub::Get, &request, &response, 15, 3);
-    if (!ret) {
-        printf("server_client_->SendRequest Get fail!\n");
+
+    std::string addrs(ch->GetTargetAddrs(argv[0]));
+    client_impl* client_ = new client_impl(addrs);
+    int ret = client_->Get(argv[0]);
+    if (ret) {
+        printf("client_->SendRequest Get fail!\n");
         return -1;
     }
-    if (response.status() == kOK) {
-        printf("-->%s value:%s\n", __func__, response.value().c_str());
-        return 0;
-    } else {
-        printf("-->%s key not found!\n", __func__);
-        return -1;
-    }
+}
+
+int PutBatch(conshash* ch, int argc, char* argv[]) {
+    //std::string data("1,a\n2,b\n3,c\n4,d\n");
+    //int ret = client_->PutBatch(data);
+    //if (ret) {
+    //    printf("client_->SendRequest PutBatch fail!\n");
+    //    return -1;
+    //}
+    return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -68,26 +79,30 @@ int main(int argc, char* argv[]) {
         PrintUsage();
         return 0;
     }
-    //init server
-    std::string server_node("10.10.2.203:12321,10.10.2.204:12321");
-    RpcClient* rpc_client_ = new RpcClient();
-    ServerClient* server_client_ = new ServerClient(rpc_client_, server_node);
-    //echo test
-    EchoRequest request;
-    EchoResponse response;
-    request.set_echo("lusen hello");
-    server_client_->SendRequest(&ServerService_Stub::Echo, &request, &response, 15, 3);
+    if (FLAGS_flagfile == "") {
+        FLAGS_flagfile = "./config.flag";
+    }
+    ::google::ParseCommandLineFlags(&argc, &argv, false);
+    printf("server_nodes:%s\n", FLAGS_server_nodes.c_str());
+    printf("data_distribute_strategy:%s\n", FLAGS_dd_strategy.c_str());
+
+    conshash* ch;
+    if (FLAGS_dd_strategy == "none") {
+        ch = NULL;
+    } else if (FLAGS_dd_strategy == "conshash") {
+        ch = new conshash(FLAGS_server_nodes, 0, 3);
+    }
 
     int ret = -1;
     if (strcmp(argv[1], "put") == 0) {
-        ret = Put(server_client_, argc - 2, argv + 2);
+        ret = Put(ch, argc - 2, argv + 2);
     } else if (strcmp(argv[1], "get") == 0) {
-        ret = Get(server_client_, argc - 2, argv + 2);
+        ret = Get(ch, argc - 2, argv + 2);
+    } else if (strcmp(argv[1], "putbatch") == 0) {
+        ret = PutBatch(ch, argc - 2, argv + 2);
     } else {
         PrintUsage();
     }
 
-    delete rpc_client_;
-    delete server_client_;
     return ret;
 }

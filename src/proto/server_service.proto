@@ -31,8 +31,27 @@ message GetResponse {
     optional StatusCode status = 2;
 }
 
+message PutBatchRequest {
+    optional int32 kv_nums = 1;
+    optional bytes databuf = 2;
+}
+
+message PutBatchResponse {
+    optional StatusCode status = 1;
+}
+
+message GetBatchRequest {
+    optional uint32 key_start = 1;
+    optional uint32 key_end = 2;
+}
+
+message GetBatchResponse {
+    optional bytes databuf = 1;
+    optional StatusCode status = 2;
+}
 service ServerService {
     rpc Echo(EchoRequest) returns(EchoResponse);
     rpc Put(PutRequest) returns(PutResponse);
     rpc Get(GetRequest) returns(GetResponse);
+    rpc PutBatch(PutBatchRequest) returns(PutBatchResponse);
 }

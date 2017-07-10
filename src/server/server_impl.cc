@@ -91,4 +91,43 @@ void ServerImpl::Get(::google::protobuf::RpcController* controller,
     }
     done->Run();
 }
+
+void ServerImpl::PutBatch(::google::protobuf::RpcController* controller,
+                            const PutBatchRequest* request,
+                            PutBatchResponse* response,
+                            ::google::protobuf::Closure* done) {
+    if (!is_leader) {
+        response->set_status(kIsFollower);
+        done->Run();
+        return;
+    }
+
+    const std::string& databuf = request->databuf();
+    int size = databuf.size();
+    int key_last = -1;
+    int value_last = -1;
+    leveldb::WriteBatch batch;
+    for (int i = 0; i < size; ++i) {
+        if (databuf[i] != ',' && databuf[i] != '\n') {
+            continue;
+        } else if (databuf[i] == ',') {
+            key_last = i;
+        } else if (databuf[i] == '\n') {
+            const std::string& k = databuf.substr(value_last + 1, key_last - value_last - 1);
+            const std::string& v = databuf.substr(key_last + 1, i - key_last - 1);
+            printf("k:%s v:%s\n", k.c_str(), v.c_str());
+            batch.Put(k, v);
+            value_last = i;
+        }
+    }
+    leveldb::Status s = db_->Write(leveldb::WriteOptions(), &batch);
+    if (!s.ok()) {
+        printf("PutBatch leveldb fail!\n");
+    }
+    response->set_status(kOK);
+    done->Run();
+}
+
+
+
 }
