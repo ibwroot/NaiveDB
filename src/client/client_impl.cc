@@ -32,7 +32,7 @@ int client_impl::Put(std::string key, std::string value) {
     return 0;
 }
 
-int client_impl::Get(std::string key) {
+int client_impl::Get(std::string key, std::string& value) {
     GetRequest request;
     GetResponse response;
     request.set_key(key);
@@ -42,6 +42,7 @@ int client_impl::Get(std::string key) {
         return -1;
     }
     if (response.status() == kOK) {
+        value = response.value();
         printf("-->%s value:%s\n", __func__, response.value().c_str());
         return 0;
     } else {
@@ -67,7 +68,20 @@ int client_impl::PutBatch(const std::string& data) {
 
 }
 
-
+int client_impl::GetBatch(const std::string& key_start, const std::string& key_end, std::string& databuf) {
+    GetBatchRequest request;
+    GetBatchResponse response;
+    request.set_key_start(key_start);
+    request.set_key_end(key_end);
+    bool ret = server_client_->SendRequest(&ServerService_Stub::GetBatch, &request, &response, 15, 3);
+    if (!ret) {
+        printf("server_client_->SendRequest GetBatch fail!\n");
+        return -1;
+    }
+    printf("%s %s\n", __func__, response.databuf().c_str());
+    databuf = response.databuf();
+    return 0;
+}
 
 
 }

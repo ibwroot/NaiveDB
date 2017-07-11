@@ -129,5 +129,36 @@ void ServerImpl::PutBatch(::google::protobuf::RpcController* controller,
 }
 
 
+void ServerImpl::GetBatch(::google::protobuf::RpcController* controller,
+                            const GetBatchRequest* request,
+                            GetBatchResponse* response,
+                            ::google::protobuf::Closure* done) {
+    printf("%s!!!!\n", __func__);
+    if (!is_leader) {
+        response->set_status(kIsFollower);
+        done->Run();
+        return;
+    }
+    auto key_start = request->key_start();
+    auto key_end = request->key_end();
+    std::string databuf;
+    leveldb::Iterator* it = db_->NewIterator(leveldb::ReadOptions());
+    for (it->Seek(key_start); it->Valid(); it->Next()) {
+        leveldb::Slice key = it->key();
+        if (key.compare(key_end) >= 0) {
+            break;
+        }
+        printf("it->key().ToString():%s\n", it->key().ToString().c_str());
+        databuf += it->key().ToString() + "," + it->value().ToString() + "\n";
+        printf("key.data():%s value.data():%s databuf:%s\n", it->key().ToString().c_str(), 
+                                                            it->value().ToString().c_str(), databuf.c_str());
+    }
+    response->set_databuf(databuf);
+    response->set_status(kOK);
+    delete it;
+
+    done->Run();
 
 }
+
+}//namespace raft_demo

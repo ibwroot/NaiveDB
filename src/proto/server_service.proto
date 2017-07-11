@@ -41,8 +41,8 @@ message PutBatchResponse {
 }
 
 message GetBatchRequest {
-    optional uint32 key_start = 1;
-    optional uint32 key_end = 2;
+    optional string key_start = 1;
+    optional string key_end = 2;
 }
 
 message GetBatchResponse {
@@ -54,4 +54,5 @@ service ServerService {
     rpc Put(PutRequest) returns(PutResponse);
     rpc Get(GetRequest) returns(GetResponse);
     rpc PutBatch(PutBatchRequest) returns(PutBatchResponse);
+    rpc GetBatch(GetBatchRequest) returns(GetBatchResponse);
 }

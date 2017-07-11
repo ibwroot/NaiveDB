@@ -30,6 +30,7 @@ void PrintUsage() {
     printf("\t  put <key> <value>\n");
     printf("\t\t  get <key>\n");
     printf("\t\t  putbatch <file path>\n");
+    printf("\t\t  getbatch <key_start> <key_end>\n");
 }
 
 int Put(conshash* ch, int argc, char* argv[]) {
@@ -57,23 +58,43 @@ int Get(conshash* ch, int argc, char* argv[]) {
 
     std::string addrs(ch->GetTargetAddrs(argv[0]));
     client_impl* client_ = new client_impl(addrs);
-    int ret = client_->Get(argv[0]);
+    std::string value;
+    int ret = client_->Get(argv[0], value);
     if (ret) {
         printf("client_->SendRequest Get fail!\n");
         return -1;
     }
-}
-
-int PutBatch(conshash* ch, int argc, char* argv[]) {
-    //std::string data("1,a\n2,b\n3,c\n4,d\n");
-    //int ret = client_->PutBatch(data);
-    //if (ret) {
-    //    printf("client_->SendRequest PutBatch fail!\n");
-    //    return -1;
-    //}
+    printf("%s value:%s\n", __func__, value.c_str());
     return 0;
 }
 
+int PutBatch(conshash* ch, int argc, char* argv[]) {
+    std::string data("1111,a\n2222,b\n3333,c\n4444,d\n");
+    auto first_key = data.find(",");
+    printf("data.substr(0, first_key):%s!!!\n", data.substr(0, first_key).c_str());
+    std::string addrs(ch->GetTargetAddrs(data.substr(0, first_key)));
+    client_impl* client_ = new client_impl(addrs);
+    int ret = client_->PutBatch(data);
+    if (ret) {
+        printf("client_->SendRequest PutBatch fail!\n");
+        return -1;
+    }
+    return 0;
+}
+
+int GetBatch(conshash* ch, int argc, char* argv[]) {
+
+    std::string values;
+    std::string addrs(ch->GetTargetAddrs(argv[0]));
+    client_impl* client_ = new client_impl(addrs);
+    int ret = client_->GetBatch(argv[0], argv[1], values);
+    if (ret) {
+        printf("client_->SendRequest Get fail!\n");
+        return -1;
+    }
+    printf("%s values:%s\n", __func__, values.c_str());
+    return 0;
+}
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         PrintUsage();
@@ -100,6 +121,8 @@ int main(int argc, char* argv[]) {
         ret = Get(ch, argc - 2, argv + 2);
     } else if (strcmp(argv[1], "putbatch") == 0) {
         ret = PutBatch(ch, argc - 2, argv + 2);
+    } else if (strcmp(argv[1], "getbatch") == 0) {
+        ret = GetBatch(ch, argc - 2, argv + 2);
     } else {
         PrintUsage();
     }

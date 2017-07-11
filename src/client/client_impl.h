@@ -19,8 +19,9 @@ public:
     ~client_impl();
     int Echo(std::string echo);
     int Put(std::string key, std::string value);
-    int Get(std::string key);
+    int Get(std::string key, std::string& value);
     int PutBatch(const std::string& data);
+    int GetBatch(const std::string& key_start, const std::string& key_end, std::string& values);
 
 private:
     RpcClient* rpc_client_;
