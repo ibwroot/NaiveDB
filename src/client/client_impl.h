@@ -2,6 +2,7 @@
 #define CLIENT_IMPL_H
 
 #include <string>
+#include <sstream>
 
 #include <sofa/pbrpc/pbrpc.h>
 #include <gflags/gflags.h>
@@ -22,7 +23,10 @@ public:
     int Get(std::string key, std::string& value);
     int PutBatch(const std::string& data);
     int GetBatch(const std::string& key_start, const std::string& key_end, std::string& values);
-
+    int GetNodeData(const std::string& key_hash_start, const std::string& key_hash_end,
+                                std::string& databuf);
+private:
+    unsigned int toUINT32(const std::string s);
 private:
     RpcClient* rpc_client_;
     ServerClient* server_client_;

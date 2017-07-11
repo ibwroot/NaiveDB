@@ -35,6 +35,12 @@ public:
             const GetBatchRequest* request,
             GetBatchResponse* response,
             ::google::protobuf::Closure* done);
+    void GetNodeData(::google::protobuf::RpcController* controller,
+            const GetNodeDataRequest* request,
+            GetNodeDataResponse* response,
+            ::google::protobuf::Closure* done);
+private:
+    unsigned int MurMurHash(const void *key, unsigned int len);
 private:
 //    Sync* sync_;
     bool is_leader;

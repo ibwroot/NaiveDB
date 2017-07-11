@@ -49,10 +49,22 @@ message GetBatchResponse {
     optional bytes databuf = 1;
     optional StatusCode status = 2;
 }
+
+message GetNodeDataRequest {
+    optional uint32 key_hash_start = 1;
+    optional uint32 key_hash_end = 2;
+}
+
+message GetNodeDataResponse {
+    optional string databuf = 1;
+    optional StatusCode status = 2;
+}
+
 service ServerService {
     rpc Echo(EchoRequest) returns(EchoResponse);
     rpc Put(PutRequest) returns(PutResponse);
     rpc Get(GetRequest) returns(GetResponse);
     rpc PutBatch(PutBatchRequest) returns(PutBatchResponse);
     rpc GetBatch(GetBatchRequest) returns(GetBatchResponse);
+    rpc GetNodeData(GetNodeDataRequest) returns(GetNodeDataResponse);
 }

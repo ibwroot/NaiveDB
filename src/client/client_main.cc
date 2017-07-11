@@ -13,6 +13,7 @@ DECLARE_string(flagfile);
 DEFINE_string(dd_strategy, "none", "data distribute strategy");
 DEFINE_string(server_nodes, "", "server cluster addresses");
 
+#define DEPULICATE 3 
 using namespace raft_demo;
 
 /*
@@ -29,6 +30,8 @@ void PrintUsage() {
     printf("command:");
     printf("\t  put <key> <value>\n");
     printf("\t\t  get <key>\n");
+    printf("\t\t  addnode <ip:port>\n");
+    printf("\t\t  removenode <ip:port>\n");
     printf("\t\t  putbatch <file path>\n");
     printf("\t\t  getbatch <key_start> <key_end>\n");
 }
@@ -95,6 +98,51 @@ int GetBatch(conshash* ch, int argc, char* argv[]) {
     printf("%s values:%s\n", __func__, values.c_str());
     return 0;
 }
+
+void SplitString(const std::string& source, std::vector<std::string>* stringv) {
+    int size = source.size();
+    int last = -1;
+    for (int i = 0; i < size; ++i) {
+        if (source[i] != ',') {
+            continue;
+        } else {
+            stringv->push_back(source.substr(last + 1, i - last - 1));
+            last = i;
+        }
+    }
+    stringv->push_back(source.substr(last + 1));
+}
+
+/*
+ * magrate data to new node
+ */
+int AddNode(conshash* ch, int argc, char* argv[]) {
+    printf("%s addr:%s\n", __func__, argv[0]);
+    int ret = -1;
+    std::vector<std::string> ops = ch->AddNode(argv[0]);
+    std::string getdatabuf;
+    for (int i = 0; i < DEPULICATE; ++i) {
+        printf("###op:%s\n", ops[i].c_str());
+        std::vector<std::string> opv;
+        SplitString(ops[i], &opv);
+        client_impl* client_ = new client_impl(opv[0]);
+        int ret = client_->GetNodeData(opv[1], opv[2], getdatabuf);
+        if (ret) {
+            printf("client_->SendRequest GetNodeData fail!\n");
+            return -1;
+        }
+    }
+    printf("%s getdatabuf:%s!!!\n", __func__, getdatabuf.c_str());
+    // magrate data to new node
+    client_impl* client_ = new client_impl(argv[0]);
+    ret = client_->PutBatch(getdatabuf);
+    if (ret) {
+        printf("client_->SendRequest PutBatch fail!\n");
+        return -1;
+    }
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         PrintUsage();
@@ -123,6 +171,8 @@ int main(int argc, char* argv[]) {
         ret = PutBatch(ch, argc - 2, argv + 2);
     } else if (strcmp(argv[1], "getbatch") == 0) {
         ret = GetBatch(ch, argc - 2, argv + 2);
+    } else if (strcmp(argv[1], "addnode") == 0) {
+        ret = AddNode(ch, argc - 2, argv + 2);
     } else {
         PrintUsage();
     }

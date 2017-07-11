@@ -17,6 +17,7 @@ int client_impl::Echo(std::string echo) {
     EchoResponse response;
     request.set_echo(echo);
     server_client_->SendRequest(&ServerService_Stub::Echo, &request, &response, 15, 3);
+    return 0;
 }
 
 int client_impl::Put(std::string key, std::string value) {
@@ -83,5 +84,28 @@ int client_impl::GetBatch(const std::string& key_start, const std::string& key_e
     return 0;
 }
 
+unsigned int client_impl::toUINT32(const std::string s) {
+    std::stringstream a;
+    a<<s;
+    unsigned int ret = 0;
+    a>>ret;
+    return ret;
+}
+
+int client_impl::GetNodeData(const std::string& key_hash_start, const std::string& key_hash_end,
+                            std::string& databuf) {
+    GetNodeDataRequest request;
+    GetNodeDataResponse response;
+    request.set_key_hash_start(toUINT32(key_hash_start));
+    request.set_key_hash_end(toUINT32(key_hash_end));
+    bool ret = server_client_->SendRequest(&ServerService_Stub::GetNodeData, &request, &response, 15, 3);
+    if (!ret) {
+        printf("server_client_->SendRequest GetBatch fail!\n");
+        return -1;
+    }
+    printf("%s %s\n", __func__, response.databuf().c_str());
+    databuf += response.databuf();
+    return 0;
+}
 
 }
